@@ -1,7 +1,6 @@
 import React, { useRef, useMemo, useEffect } from 'react'
-import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { OrbitControls, Environment, Float, Html } from '@react-three/drei'
-
+import { Canvas, useFrame, useThree, useLoader } from '@react-three/fiber'
+import { OrbitControls, Environment, Float, Html, MeshReflectorMaterial, Sky, Stars } from '@react-three/drei'
 import { RobotModel } from './RobotModel'
 import { useStore } from '../store/useStore'
 import * as THREE from 'three'
@@ -10,15 +9,35 @@ import { BlueprintCallout } from '../components/BlueprintCallout'
 // Simulated water plane
 function WaterPlane() {
   const nightMode = useStore((state) => state.nightMode)
+  const explodedView = useStore((state) => state.explodedView)
+  const waterNormals = useLoader(THREE.TextureLoader, '/waternormals.jpg')
+
+  useMemo(() => {
+    waterNormals.wrapS = waterNormals.wrapT = THREE.RepeatWrapping
+    waterNormals.repeat.set(15, 15)
+  }, [waterNormals])
+
+  useFrame((state, delta) => {
+    waterNormals.offset.x -= delta * 0.015
+    waterNormals.offset.y += delta * 0.015
+  })
+
   return (
     <mesh position={[0, -0.2, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-      <planeGeometry args={[100, 100]} />
-      <meshStandardMaterial 
-        color={nightMode ? "#061324" : "#0f274a"} 
-        roughness={0.05} 
-        metalness={0.9}
-        transparent 
-        opacity={0.85}
+      <planeGeometry args={[200, 200]} />
+      <MeshReflectorMaterial
+        blur={[300, 100]}
+        resolution={1024}
+        mixBlur={1}
+        mixStrength={1.5}
+        roughness={0.7}
+        color={nightMode ? "#050F1A" : "#0F2A2E"}
+        metalness={0.8}
+        mirror={0.6}
+        normalMap={waterNormals}
+        normalScale={[0.15, 0.15]}
+        transparent
+        opacity={explodedView ? 0.15 : 0.9}
       />
     </mesh>
   )
@@ -147,8 +166,8 @@ function CameraRig() {
     // Zoom out more for smaller screens to ensure it fits
     const dist = isMobile ? 8 : (isTablet ? 7 : 6)
     
-    // Position camera diagonally elevated
-    camera.position.set(2.5, 2.5, dist)
+    // Position camera lower to see horizon
+    camera.position.set(4, 2, dist)
     
     // Increase FOV slightly on mobile if needed
     camera.fov = isMobile ? 55 : 45
@@ -198,15 +217,27 @@ export default function Scene() {
   const nightMode = useStore((state) => state.nightMode)
 
   return (
-    <Canvas className="w-full h-full" shadows camera={{ position: [2, 2, 3], fov: 45 }}>
+    <Canvas className="w-full h-full" shadows camera={{ position: [4, 2, 6], fov: 45 }}>
       <ContextHandler />
       
+      {/* Sky and Environment */}
+      <Sky
+        distance={450000}
+        sunPosition={nightMode ? [0, -1, 0] : [10, 5, 10]}
+        turbidity={nightMode ? 0.1 : 8}
+        rayleigh={nightMode ? 0.1 : 2}
+        mieCoefficient={0.005}
+        mieDirectionalG={0.8}
+      />
+      {nightMode && <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />}
+
       {/* Marine Navy Background */}
       <color attach="background" args={[nightMode ? '#050A10' : '#0B1420']} />
+      <fog attach="fog" args={[nightMode ? '#050A10' : '#0B1420', 30, 90]} />
       
-      <ambientLight intensity={nightMode ? 0.2 : 0.8} />
+      <ambientLight intensity={nightMode ? 0.2 : 0.6} />
       <directionalLight 
-        position={[5, 10, 5]} 
+        position={nightMode ? [5, 10, 5] : [10, 5, 10]} 
         intensity={nightMode ? 0.5 : 2.5} 
         color={nightMode ? "#2DD4BF" : "#ffffff"}
         castShadow 
@@ -221,7 +252,7 @@ export default function Scene() {
       <WasteItem initialPosition={[-2, 0, 3]} type="leaf" />
       
       <WaterPlane />
-      <Environment preset={nightMode ? "night" : "studio"} environmentIntensity={0.5} />
+      <Environment preset={nightMode ? "night" : "sunset"} background={false} environmentIntensity={nightMode ? 0.3 : 1} />
     </Canvas>
   )
 }

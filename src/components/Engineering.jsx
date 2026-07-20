@@ -2,6 +2,7 @@ import React from 'react'
 import { motion } from 'framer-motion'
 import { Cpu, Zap, Radio, Target } from 'lucide-react'
 import { BlueprintCallout } from './BlueprintCallout'
+import { SystemArchitecture } from './SystemArchitecture'
 
 const steps = [
   { title: "Navigation & Perception", desc: "Four HC-SR04 ultrasonic sensors maintain a 0.5m obstacle clearance yielding a 95.6% avoidance success rate.", icon: Radio },
@@ -21,15 +22,13 @@ export function Engineering() {
       </div>
 
       <div className="grid md:grid-cols-2 gap-16 items-center">
-        {/* Actual Architectural Diagram Image */}
-        <div className="glass-panel p-2 flex flex-col items-center justify-center relative overflow-hidden group">
-          <div className="absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition-colors pointer-events-none z-10"></div>
-          {/* Replace src with whichever image is the exact one, defaulting to the first uploaded */}
-          <img src="/assets/media__1784373476132.jpg" alt="Control Architecture Diagram" className="w-full h-auto rounded object-contain relative z-20" />
+        {/* Isometric System Architecture Diagram */}
+        <div className="glass-panel p-2 flex flex-col items-center justify-center relative group w-full h-[500px]">
+          <SystemArchitecture />
           
-          <div className="absolute bottom-4 left-4 z-30">
-            <div className="bg-marine/80 backdrop-blur px-3 py-1.5 border border-border">
-              <span className="font-mono text-[10px] uppercase tracking-widest text-primary">Fig 1. Node Diagram</span>
+          <div className="absolute bottom-4 left-4 z-30 pointer-events-none">
+            <div className="bg-marine/90 backdrop-blur px-3 py-1.5 border border-border shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
+              <span className="font-mono text-[10px] uppercase tracking-widest text-primary font-bold">System Architecture — Signal & Power Flow</span>
             </div>
           </div>
         </div>
