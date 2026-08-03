@@ -4,12 +4,12 @@ import { Image as ImageIcon, Maximize2 } from 'lucide-react'
 
 export function Gallery() {
   const images = [
-    { id: 1, label: "Top-down View", desc: "47×22 cm primary conveyor configuration" },
-    { id: 2, label: "Side Angle", desc: "HDPE foam catamaran hull with PVC modules" },
-    { id: 3, label: "Water Collection", desc: "Demonstrating 1.23 kg/hr throughput" },
-    { id: 4, label: "Obstacle Avoidance", desc: "Static and dynamic obstacle testing" },
-    { id: 5, label: "Main PCB", desc: "Raspberry Pi 4 and ESP32 integration" },
-    { id: 6, label: "Propulsion System", desc: "Differential drive with L298N control" }
+    { id: 1, label: "Top-down View", desc: "47×22 cm primary conveyor configuration", src: "/gallery/top-down-view.jpg" },
+    { id: 2, label: "Side Angle", desc: "HDPE foam catamaran hull with PVC modules", src: "/gallery/side-angle.jpg" },
+    { id: 3, label: "Water Collection", desc: "Demonstrating 1.23 kg/hr throughput", src: "/gallery/water-collection-1.jpg" },
+    { id: 4, label: "Obstacle Avoidance", desc: "Static and dynamic obstacle testing", src: null },
+    { id: 5, label: "Main PCB", desc: "Raspberry Pi 4 and ESP32 integration", src: null },
+    { id: 6, label: "Propulsion System", desc: "Differential drive with L298N control", src: "/gallery/propulsion-system.jpg" }
   ]
 
   return (
@@ -34,10 +34,18 @@ export function Gallery() {
             {/* Ambient hover glow */}
             <div className="absolute inset-0 bg-gradient-to-t from-marine via-transparent to-transparent opacity-100 z-10 transition-opacity duration-500 group-hover:opacity-50"></div>
             
-            {/* Replace this with actual image tag later */}
-            <div className="absolute inset-0 bg-marine/40 flex flex-col items-center justify-center transition-transform duration-700 group-hover:scale-105">
-              <ImageIcon size={40} className="text-text-muted/40 mb-2 group-hover:text-primary transition-colors duration-500" />
-            </div>
+            {/* Image or placeholder */}
+            {img.src ? (
+              <img 
+                src={img.src} 
+                alt={img.label} 
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+            ) : (
+              <div className="absolute inset-0 bg-marine/40 flex flex-col items-center justify-center transition-transform duration-700 group-hover:scale-105">
+                <ImageIcon size={40} className="text-text-muted/40 mb-2 group-hover:text-primary transition-colors duration-500" />
+              </div>
+            )}
 
             <div className="absolute top-4 right-4 z-20 opacity-0 -translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
                <div className="bg-marine/80 backdrop-blur p-2 rounded-full border border-border">

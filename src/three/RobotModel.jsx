@@ -1,3 +1,32 @@
+
+function ClimbingDebris({ debris, progress }) {
+  if (!debris) return null;
+  
+  // Progress goes from 0 to 1
+  // Ramp goes from y=-1.45 to y=0.45
+  const yPos = -1.45 + progress * 1.9;
+  const color = debris.type === 'bottle' ? '#2DD4BF' : debris.type === 'leaf' ? '#14b8a6' : '#F5A623';
+  
+  const scale = progress > 0.8 ? Math.max(0, 1 - (progress - 0.8) * 5) : 1;
+  const showLabel = progress < 0.8;
+
+  return (
+    <group position={[0, yPos, 0.05]} scale={scale}>
+      <mesh castShadow receiveShadow>
+        {debris.type === 'bottle' ? <cylinderGeometry args={[0.05, 0.05, 0.2, 8]} /> : <boxGeometry args={[0.1, 0.02, 0.1]} />}
+        <meshStandardMaterial color={color} roughness={0.3} metalness={0.1} />
+      </mesh>
+      
+      {showLabel && (
+         <Html position={[0, 0.3, 0]} center zIndexRange={[100, 0]}>
+           <div className="bg-marine/80 text-secondary border border-secondary px-3 py-1.5 rounded-sm font-mono text-[10px] uppercase tracking-widest whitespace-nowrap backdrop-blur shadow-[0_0_15px_rgba(245,166,35,0.3)]">
+             Target [0.98]
+           </div>
+         </Html>
+      )}
+    </group>
+  );
+}
 import React, { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useStore } from '../store/useStore'
@@ -5,7 +34,9 @@ import * as THREE from 'three'
 import { Text, Html, QuadraticBezierLine } from '@react-three/drei'
 import { BlueprintCallout } from '../components/BlueprintCallout'
 
+
 // A reusable component part that can be clicked and exploded
+
 const RobotPart = ({ 
   name, 
   description,
@@ -73,6 +104,10 @@ const RobotPart = ({
 export function RobotModel(props) {
   const transparentChassis = useStore((state) => state.transparentChassis)
   const nightMode = useStore((state) => state.nightMode)
+  const inclineAngle = useStore((state) => state.inclineAngle)
+  const collectingDebris = useStore((state) => state.collectingDebris)
+  const collectProgress = useStore((state) => state.collectProgress)
+  const rampRotationX = -(90 - inclineAngle) * (Math.PI / 180)
   
   return (
     <group {...props} dispose={null}>
@@ -88,7 +123,7 @@ export function RobotModel(props) {
         <group position={[-0.4, 0, 0]}>
           <mesh rotation={[Math.PI / 2, 0, 0]} castShadow receiveShadow>
             <cylinderGeometry args={[0.15, 0.15, 1.6, 32]} />
-            <meshStandardMaterial color="#eeeeee" roughness={0.3} metalness={0.1} />
+            <meshStandardMaterial color="#eeeeee" roughness={0.6} metalness={0} />
           </mesh>
           <mesh position={[0, 0, 0.8]} castShadow receiveShadow>
             <sphereGeometry args={[0.15, 32, 16]} />
@@ -112,7 +147,7 @@ export function RobotModel(props) {
         <group position={[0.4, 0, 0]}>
           <mesh rotation={[Math.PI / 2, 0, 0]} castShadow receiveShadow>
             <cylinderGeometry args={[0.15, 0.15, 1.6, 32]} />
-            <meshStandardMaterial color="#eeeeee" roughness={0.3} metalness={0.1} />
+            <meshStandardMaterial color="#eeeeee" roughness={0.6} metalness={0} />
           </mesh>
           <mesh position={[0, 0, 0.8]} castShadow receiveShadow>
             <sphereGeometry args={[0.15, 32, 16]} />
@@ -148,8 +183,8 @@ export function RobotModel(props) {
             color="#ffffff" 
             transparent={true} 
             opacity={transparentChassis ? 0.3 : 0.6} 
-            roughness={0.2} 
-            metalness={0.1}
+            roughness={0.6} 
+            metalness={0}
             transmission={0.9} 
             thickness={0.02}
           />
@@ -185,51 +220,58 @@ export function RobotModel(props) {
         position={[0, 0.15, 0.85]} 
         explodeOffset={[0, 0.5, 0.8]}
       >
-        {/* 30 degree angle (PI / 6) */}
-        <group rotation={[-Math.PI / 6, 0, 0]}>
+        <group rotation={[rampRotationX, 0, 0]}>
           {/* White plastic/wooden Side rails */}
-          <mesh position={[-0.35, 0, 0]} castShadow>
-            <boxGeometry args={[0.05, 1.2, 0.05]} />
+          <mesh position={[-0.35, -0.5, 0]} castShadow>
+            <boxGeometry args={[0.05, 2.1, 0.05]} />
             <meshStandardMaterial color="#f8f9fa" roughness={0.8} />
           </mesh>
-          <mesh position={[0.35, 0, 0]} castShadow>
-            <boxGeometry args={[0.05, 1.2, 0.05]} />
+          <mesh position={[0.35, -0.5, 0]} castShadow>
+            <boxGeometry args={[0.05, 2.1, 0.05]} />
             <meshStandardMaterial color="#f8f9fa" roughness={0.8} />
           </mesh>
           {/* Cream Rollers */}
-          <mesh position={[0, 0.55, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+          <mesh position={[0, 0.5, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
             <cylinderGeometry args={[0.04, 0.04, 0.7, 32]} />
             <meshStandardMaterial color="#d2b48c" roughness={0.6} />
           </mesh>
-          <mesh position={[0, -0.55, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+          <mesh position={[0, -1.5, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
             <cylinderGeometry args={[0.04, 0.04, 0.7, 32]} />
             <meshStandardMaterial color="#d2b48c" roughness={0.6} />
           </mesh>
           {/* The Mesh Surface */}
-          <mesh position={[0, 0, 0]} receiveShadow>
-            <planeGeometry args={[0.68, 1.1]} />
+          <mesh position={[0, -0.5, 0]} receiveShadow>
+            <planeGeometry args={[0.68, 2.0]} />
             <meshStandardMaterial color="#aaaaaa" transparent opacity={0.6} roughness={0.9} />
           </mesh>
           {/* Wireframe weave */}
-          <mesh position={[0, 0, 0.001]}>
-             <planeGeometry args={[0.68, 1.1, 20, 30]} />
-             <meshBasicMaterial color="#555555" wireframe={true} transparent opacity={0.3} />
+          <mesh position={[0, -0.5, 0.001]}>
+             <planeGeometry args={[0.68, 2.0, 20, 50]} />
+             <meshStandardMaterial color="#555555" wireframe={true} transparent opacity={0.3} roughness={0.3} metalness={0.8} />
           </mesh>
           {/* Black Tape Strips */}
-          <mesh position={[-0.15, 0, 0.002]}>
-             <planeGeometry args={[0.03, 1.1]} />
-             <meshBasicMaterial color="#111111" />
+          <mesh position={[-0.15, -0.5, 0.002]}>
+             <planeGeometry args={[0.03, 2.0]} />
+             <meshStandardMaterial color="#111111" roughness={0.8} metalness={0} />
           </mesh>
-          <mesh position={[0.15, 0, 0.002]}>
-             <planeGeometry args={[0.03, 1.1]} />
-             <meshBasicMaterial color="#111111" />
+          <mesh position={[0.15, -0.5, 0.002]}>
+             <planeGeometry args={[0.03, 2.0]} />
+             <meshStandardMaterial color="#111111" roughness={0.8} metalness={0} />
           </mesh>
-          {/* Yellow DC Motors at base */}
-          <mesh position={[-0.42, -0.55, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+          <ClimbingDebris debris={collectingDebris} progress={collectProgress} />
+          {/* Conveyor Cleats for steeper incline */}
+          {Array.from({ length: 20 }).map((_, i) => (
+            <mesh key={i} position={[0, -1.45 + i * 0.1, 0.01]} castShadow>
+              <boxGeometry args={[0.66, 0.015, 0.02]} />
+              <meshStandardMaterial color="#111111" roughness={0.8} metalness={0} />
+            </mesh>
+          ))}
+          {/* Yellow DC Motors at top near hinge */}
+          <mesh position={[-0.42, 0.5, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
              <boxGeometry args={[0.08, 0.1, 0.08]} />
              <meshStandardMaterial color="#eab308" roughness={0.4} />
           </mesh>
-          <mesh position={[0.42, -0.55, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+          <mesh position={[0.42, 0.5, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
              <boxGeometry args={[0.08, 0.1, 0.08]} />
              <meshStandardMaterial color="#eab308" roughness={0.4} />
           </mesh>
@@ -252,11 +294,11 @@ export function RobotModel(props) {
         {/* Cells */}
         <mesh position={[-0.04, 0.03, 0]} rotation={[Math.PI/2, 0, 0]} castShadow>
           <cylinderGeometry args={[0.03, 0.03, 0.14, 32]} />
-          <meshStandardMaterial color="#06b6d4" roughness={0.3} metalness={0.6} />
+          <meshStandardMaterial color="#06b6d4" roughness={0.3} metalness={0.8} />
         </mesh>
         <mesh position={[0.04, 0.03, 0]} rotation={[Math.PI/2, 0, 0]} castShadow>
           <cylinderGeometry args={[0.03, 0.03, 0.14, 32]} />
-          <meshStandardMaterial color="#06b6d4" roughness={0.3} metalness={0.6} />
+          <meshStandardMaterial color="#06b6d4" roughness={0.3} metalness={0.8} />
         </mesh>
         {/* Switch */}
         <mesh position={[0.12, 0.02, 0]} castShadow>
@@ -291,11 +333,11 @@ export function RobotModel(props) {
            {/* USB/Ethernet Blocks */}
            <mesh position={[0.08, 0.03, 0.05]} castShadow>
              <boxGeometry args={[0.04, 0.05, 0.06]} />
-             <meshStandardMaterial color="#d1d5db" metalness={0.9} roughness={0.2} />
+             <meshStandardMaterial color="#d1d5db" metalness={0.8} roughness={0.3} />
            </mesh>
            <mesh position={[0.08, 0.03, -0.02]} castShadow>
              <boxGeometry args={[0.04, 0.05, 0.04]} />
-             <meshStandardMaterial color="#d1d5db" metalness={0.9} roughness={0.2} />
+             <meshStandardMaterial color="#d1d5db" metalness={0.8} roughness={0.3} />
            </mesh>
            {/* CPU */}
            <mesh position={[-0.02, 0.015, 0.02]} castShadow>
@@ -314,7 +356,7 @@ export function RobotModel(props) {
            {/* Chip */}
            <mesh position={[0, 0.015, 0.03]} castShadow>
              <boxGeometry args={[0.04, 0.01, 0.06]} />
-             <meshStandardMaterial color="#111111" metalness={0.8} />
+             <meshStandardMaterial color="#111111" metalness={0.8} roughness={0.3} />
            </mesh>
            {/* Glow LED */}
            <mesh position={[-0.03, 0.015, -0.05]}>
@@ -401,11 +443,11 @@ export function RobotModel(props) {
            {/* Aluminum Eyes */}
            <mesh position={[-0.04, 0, 0.015]} rotation={[Math.PI / 2, 0, 0]} castShadow>
              <cylinderGeometry args={[0.025, 0.025, 0.02, 32]} />
-             <meshStandardMaterial color="#d1d5db" metalness={0.9} roughness={0.2} />
+             <meshStandardMaterial color="#d1d5db" metalness={0.8} roughness={0.3} />
            </mesh>
            <mesh position={[0.04, 0, 0.015]} rotation={[Math.PI / 2, 0, 0]} castShadow>
              <cylinderGeometry args={[0.025, 0.025, 0.02, 32]} />
-             <meshStandardMaterial color="#d1d5db" metalness={0.9} roughness={0.2} />
+             <meshStandardMaterial color="#d1d5db" metalness={0.8} roughness={0.3} />
            </mesh>
            {/* Wire to main deck */}
            <QuadraticBezierLine start={[0, 0, -0.05]} end={[0.3, -0.05, -0.45]} mid={[0.1, 0.1, -0.2]} color="yellow" lineWidth={2} />
@@ -457,11 +499,11 @@ export function RobotModel(props) {
       >
         <mesh position={[-0.3, 0, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
           <cylinderGeometry args={[0.08, 0.08, 0.2, 32]} />
-          <meshStandardMaterial color="#222222" roughness={0.2} metalness={0.9} />
+          <meshStandardMaterial color="#222222" roughness={0.3} metalness={0.8} />
         </mesh>
         <mesh position={[0.3, 0, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
           <cylinderGeometry args={[0.08, 0.08, 0.2, 32]} />
-          <meshStandardMaterial color="#222222" roughness={0.2} metalness={0.9} />
+          <meshStandardMaterial color="#222222" roughness={0.3} metalness={0.8} />
         </mesh>
       </RobotPart>
 

@@ -1,6 +1,6 @@
 import React, { useRef, useMemo, useEffect } from 'react'
 import { Canvas, useFrame, useThree, useLoader } from '@react-three/fiber'
-import { OrbitControls, Environment, Float, Html, MeshReflectorMaterial, Sky, Stars } from '@react-three/drei'
+import { OrbitControls, Environment, Float, Html, MeshReflectorMaterial, Sky, Stars, ContactShadows } from '@react-three/drei'
 import { RobotModel } from './RobotModel'
 import { useStore } from '../store/useStore'
 import * as THREE from 'three'
@@ -43,106 +43,162 @@ function WaterPlane() {
   )
 }
 
-// Waste Object that drifts towards the robot (deterministic based on timelineProgress)
-function WasteItem({ initialPosition, type }) {
-  const ref = useRef()
-  const { timelineProgress, setSimulationState, isScrubbing } = useStore()
-  const startPos = useMemo(() => new THREE.Vector3(...initialPosition), [initialPosition])
-  
-  useFrame((state, delta) => {
-    if (!ref.current) return
-    
-    if (timelineProgress < 30) {
-      const driftZ = isScrubbing ? timelineProgress * 0.01 : Math.sin(state.clock.elapsedTime * 0.5) * 0.1
-      ref.current.position.set(startPos.x, startPos.y, startPos.z + driftZ)
-      ref.current.scale.set(1, 1, 1)
-      if (timelineProgress > 25 && timelineProgress < 30) {
-        setSimulationState({ systemStatus: 'Scanning', wasteDetected: false })
-      }
-    } 
-    else if (timelineProgress >= 30 && timelineProgress < 70) {
-      const t = (timelineProgress - 30) / 40 // 0 to 1
-      ref.current.position.lerpVectors(startPos, new THREE.Vector3(0, 0, 1), t)
-      ref.current.scale.set(1, 1, 1)
-      if (timelineProgress > 30 && timelineProgress < 35) {
-        setSimulationState({ systemStatus: 'Moving', wasteDetected: true, detectedPosition: [ref.current.position.x, ref.current.position.y, ref.current.position.z] })
-      }
-    } 
-    else if (timelineProgress >= 70) {
-      ref.current.scale.set(0, 0, 0) // hide
-      if (timelineProgress > 70 && timelineProgress < 75) {
-        setSimulationState({ systemStatus: 'Collecting', wasteDetected: false })
-      }
+
+function WasteItem({ debris }) {
+  const meshRef = useRef()
+  useFrame((state) => {
+    if (meshRef.current) {
+      meshRef.current.position.y = Math.sin(state.clock.elapsedTime * 2 + debris.id) * 0.05
     }
   })
-  
-  const color = type === 'bottle' ? '#2DD4BF' : type === 'leaf' ? '#14b8a6' : '#F5A623'
-  const isTarget = timelineProgress >= 30 && timelineProgress < 70
-  
+  const color = debris.type === 'bottle' ? '#2DD4BF' : debris.type === 'leaf' ? '#14b8a6' : '#F5A623'
   return (
-    <group ref={ref} position={initialPosition}>
-      <Float speed={2} rotationIntensity={1} floatIntensity={1}>
-        <mesh castShadow receiveShadow>
-          {type === 'bottle' ? <cylinderGeometry args={[0.05, 0.05, 0.2, 8]} /> : <boxGeometry args={[0.1, 0.02, 0.1]} />}
-          <meshStandardMaterial color={color} roughness={0.3} metalness={0.1} />
-        </mesh>
+    <group position={debris.position}>
+      <mesh ref={meshRef} castShadow receiveShadow>
+        {debris.type === 'bottle' ? <cylinderGeometry args={[0.05, 0.05, 0.2, 8]} /> : <boxGeometry args={[0.1, 0.02, 0.1]} />}
+        <meshStandardMaterial color={color} roughness={0.3} metalness={0.1} />
         
-        {isTarget && (
-           <Html position={[0, 0.3, 0]} center>
-             <div className="bg-marine/80 text-secondary border border-secondary px-3 py-1.5 rounded-sm font-mono text-[10px] uppercase tracking-widest whitespace-nowrap backdrop-blur shadow-[0_0_15px_rgba(245,166,35,0.3)]">
-               Target [0.98]
-             </div>
-           </Html>
-        )}
-      </Float>
+        <Html position={[0, 0.3, 0]} center zIndexRange={[100, 0]}>
+           <div className="bg-marine/80 text-secondary border border-secondary px-3 py-1.5 rounded-sm font-mono text-[10px] uppercase tracking-widest whitespace-nowrap backdrop-blur shadow-[0_0_15px_rgba(245,166,35,0.3)]">
+             Target [0.98]
+           </div>
+        </Html>
+      </mesh>
     </group>
   )
 }
 
 function RobotRig() {
   const ref = useRef()
-  const { timelineProgress } = useStore()
-
+  const { debrisList, removeDebris, spawnDebris, setCollectingDebris, setCollectProgress, setSimulationState, isRunning, inclineAngle } = useStore()
+  
+  const [navState, setNavState] = React.useState('IDLE') // IDLE, NAVIGATING, COLLECTING
+  const [targetId, setTargetId] = React.useState(null)
+  
+  // Navigation variables
+  const robotPos = useRef(new THREE.Vector3(0, 0, 0))
+  const robotRotY = useRef(0)
+  const collectionTimer = useRef(0)
+  
   useFrame((state, delta) => {
-    ref.current.position.y = Math.sin(state.clock.elapsedTime * 2) * 0.02
-    ref.current.rotation.z = Math.sin(state.clock.elapsedTime) * 0.02
+    if (!ref.current || !isRunning) return
     
-    if (timelineProgress >= 30 && timelineProgress < 70) {
-      ref.current.rotation.x = -0.05
-    } else {
-      ref.current.rotation.x = Math.sin(state.clock.elapsedTime * 1.5) * 0.01
+    const time = state.clock.elapsedTime
+    
+    // Debug log specifically requested by user
+    if (Math.random() < 0.01) { // Log occasionally to not flood console
+        const target = debrisList.find(d => d.id === targetId)
+        console.log(`[DEBUG] Robot Pos: [${robotPos.current.x.toFixed(2)}, ${robotPos.current.z.toFixed(2)}] | Target: ${target ? `[${target.position[0].toFixed(2)}, ${target.position[2].toFixed(2)}]` : 'None'} | State: ${navState}`);
+    }
+    
+    if (navState === 'IDLE') {
+      // Find nearest target
+      if (debrisList.length > 0) {
+        let nearest = null
+        let minDist = Infinity
+        debrisList.forEach(d => {
+          const dist = Math.hypot(d.position[0] - robotPos.current.x, d.position[2] - robotPos.current.z)
+          if (dist < minDist) {
+            minDist = dist
+            nearest = d
+          }
+        })
+        if (nearest) {
+          setTargetId(nearest.id)
+          setNavState('NAVIGATING')
+          setSimulationState({ systemStatus: 'Scanning', wasteDetected: true })
+        }
+      }
+      
+      // Idle bobbing
+      ref.current.position.y = Math.sin(time * 2) * 0.02
+      ref.current.rotation.z = Math.sin(time) * 0.02
+      ref.current.rotation.x = Math.sin(time * 1.5) * 0.01
+      
+    } else if (navState === 'NAVIGATING') {
+      const target = debrisList.find(d => d.id === targetId)
+      if (!target) {
+        setNavState('IDLE')
+        return
+      }
+      
+      const dx = target.position[0] - robotPos.current.x
+      const dz = target.position[2] - robotPos.current.z
+      const dist = Math.hypot(dx, dz)
+      
+      // Target reached (distance < 2.2 since ramp sticks out in front)
+      if (dist < 2.2) {
+        setNavState('COLLECTING')
+        collectionTimer.current = 0
+        setCollectingDebris(target)
+        removeDebris(target.id)
+        setSimulationState({ systemStatus: 'Moving' })
+        return
+      }
+      
+      // Move towards target
+      const speed = 0.5 * delta
+      robotPos.current.x += (dx / dist) * speed
+      robotPos.current.z += (dz / dist) * speed
+      
+      // Rotate towards target (smoothly)
+      const targetAngle = Math.atan2(dx, dz)
+      const angleDiff = targetAngle - robotRotY.current
+      const normalizedDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff))
+      robotRotY.current += normalizedDiff * 3 * delta
+      
+      ref.current.position.set(robotPos.current.x, Math.sin(time * 2) * 0.02, robotPos.current.z)
+      ref.current.rotation.set(Math.sin(time * 1.5) * 0.01, robotRotY.current, Math.sin(time) * 0.02)
+      
+    } else if (navState === 'COLLECTING') {
+      collectionTimer.current += delta
+      const progress = collectionTimer.current / 3.0 // 3 seconds to collect
+      
+      if (progress <= 1.0) {
+        setCollectProgress(progress)
+        if (progress > 0.8 && progress < 0.85) setSimulationState({ systemStatus: 'Collecting', wasteDetected: false })
+      } else {
+        setCollectingDebris(null)
+        setCollectProgress(0)
+        spawnDebris()
+        setNavState('IDLE')
+      }
+      
+      // Idle bobbing
+      ref.current.position.y = Math.sin(time * 2) * 0.02
+      ref.current.rotation.z = Math.sin(time) * 0.02
+      ref.current.rotation.x = Math.sin(time * 1.5) * 0.01
     }
   })
 
   return (
-    <group ref={ref}>
+    <group ref={ref} name="robotRig">
       <RobotModel />
       
       {/* 3D Blueprint Callouts attached to the Robot */}
-      <Html position={[0.7, 0, 0]} center>
-        <div className="pointer-events-none transform -translate-x-1/2 -translate-y-1/2 scale-75 opacity-70">
+      <Html position={[1.5, 0.5, 0]} center>
+        <div className="pointer-events-none transform scale-75 opacity-80 bg-marine/40 backdrop-blur-sm p-2 rounded-lg border border-cyan-500/30">
            <BlueprintCallout label="Width" value="41" unit="cm" />
         </div>
       </Html>
-      <Html position={[0, 0.6, -0.6]} center>
-        <div className="pointer-events-none transform -translate-x-1/2 -translate-y-1/2 scale-75 opacity-70">
+      <Html position={[-1.5, 0.5, 0]} center>
+        <div className="pointer-events-none transform scale-75 opacity-80 bg-marine/40 backdrop-blur-sm p-2 rounded-lg border border-cyan-500/30">
            <BlueprintCallout label="Height" value="34" unit="cm" />
         </div>
       </Html>
-      <Html position={[0, 0, 0.9]} center>
-        <div className="pointer-events-none transform -translate-x-1/2 -translate-y-1/2 scale-75 opacity-70">
+      <Html position={[0, 0.5, 2.0]} center>
+        <div className="pointer-events-none transform scale-75 opacity-80 bg-marine/40 backdrop-blur-sm p-2 rounded-lg border border-cyan-500/30">
            <BlueprintCallout label="Length" value="88" unit="cm" />
         </div>
       </Html>
-      <Html position={[0, 0.5, 0.8]} center>
-        <div className="pointer-events-none transform -translate-x-1/2 -translate-y-1/2 scale-75 opacity-70">
-           <BlueprintCallout label="Incline" value="35" unit="°" />
+      <Html position={[0, 0.8, -2.0]} center>
+        <div className="pointer-events-none transform scale-75 opacity-80 bg-marine/40 backdrop-blur-sm p-2 rounded-lg border border-cyan-500/30">
+           <BlueprintCallout label="Incline" value={inclineAngle} unit="°" />
         </div>
       </Html>
     </group>
   )
 }
-
 function CameraRig() {
   const { camera, size } = useThree()
   const { cinematicMode, setCinematicMode } = useStore()
@@ -198,26 +254,51 @@ function CameraRig() {
   })
 
   return (
+    <TrackingControls />
+  )
+}
+
+function TrackingControls() {
+  const { cinematicMode } = useStore()
+  const controlsRef = useRef()
+  
+  useFrame((state) => {
+    if (controlsRef.current) {
+      const robot = state.scene.getObjectByName('robotRig')
+      if (robot) {
+        // Smoothly lerp the orbit target to the robot's world position
+        controlsRef.current.target.lerp(new THREE.Vector3(robot.position.x, 0, robot.position.z), 0.05)
+        controlsRef.current.update()
+      }
+    }
+  })
+  
+  return (
     <OrbitControls 
       ref={controlsRef}
-      makeDefault 
-      target={[0, 0.3, 0]} // Center around the visual middle of the robot
-      minPolarAngle={0} 
-      maxPolarAngle={Math.PI / 2 - 0.05} // Prevent going below water plane
-      minDistance={2} 
-      maxDistance={12} 
-      enabled={!cinematicMode} 
-      enableDamping
-      dampingFactor={0.05}
+      makeDefault
+      enablePan={false}
+      minPolarAngle={Math.PI / 4}
+      maxPolarAngle={Math.PI / 2 - 0.1}
+      minDistance={4}
+      maxDistance={8}
+      autoRotate={cinematicMode}
+      autoRotateSpeed={0.5}
     />
   )
 }
 
 export default function Scene() {
   const nightMode = useStore((state) => state.nightMode)
+  const debrisList = useStore((state) => state.debrisList)
 
   return (
-    <Canvas className="w-full h-full" shadows camera={{ position: [4, 2, 6], fov: 45 }}>
+    <Canvas 
+      className="w-full h-full" 
+      shadows={{ type: THREE.PCFSoftShadowMap }} 
+      gl={{ toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.0 }}
+      camera={{ position: [4, 2, 6], fov: 45 }}
+    >
       <ContextHandler />
       
       {/* Sky and Environment */}
@@ -236,21 +317,40 @@ export default function Scene() {
       <fog attach="fog" args={[nightMode ? '#050A10' : '#0B1420', 30, 90]} />
       
       <ambientLight intensity={nightMode ? 0.2 : 0.6} />
+      
+      {/* Key Light */}
       <directionalLight 
-        position={nightMode ? [5, 10, 5] : [10, 5, 10]} 
+        position={[10, 10, 5]} 
         intensity={nightMode ? 0.5 : 2.5} 
         color={nightMode ? "#2DD4BF" : "#ffffff"}
         castShadow 
         shadow-mapSize={2048}
         shadow-bias={-0.0001}
       />
+      {/* Fill Light */}
+      <directionalLight 
+        position={[-10, 5, -5]} 
+        intensity={nightMode ? 0.2 : 0.8} 
+        color="#aaccff"
+      />
+      {/* Rim Light */}
+      <directionalLight 
+        position={[0, 5, -10]} 
+        intensity={nightMode ? 0.8 : 2.0} 
+        color={nightMode ? "#00ffff" : "#ffeedd"}
+      />
       
       <CameraRig />
       <RobotRig />
       
-      <WasteItem initialPosition={[1.5, 0, 2]} type="bottle" />
-      <WasteItem initialPosition={[-2, 0, 3]} type="leaf" />
+      {/* Debris mapping */}
+      {debrisList && debrisList.map(d => (
+        <WasteItem key={d.id} debris={d} />
+      ))}
+      {/* Subtle ground shadow to visually ground the model */}
+      <ContactShadows position={[0, -0.19, 0]} opacity={0.6} scale={5} blur={1.5} far={4} color="#000000" />
       
+                        
       <WaterPlane />
       <Environment preset={nightMode ? "night" : "sunset"} background={false} environmentIntensity={nightMode ? 0.3 : 1} />
     </Canvas>
