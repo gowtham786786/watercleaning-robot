@@ -20,7 +20,7 @@ function ClimbingDebris({ debris, progress }) {
       {showLabel && (
          <Html position={[0, 0.3, 0]} center zIndexRange={[100, 0]}>
            <div className="bg-marine/80 text-secondary border border-secondary px-3 py-1.5 rounded-sm font-mono text-[10px] uppercase tracking-widest whitespace-nowrap backdrop-blur shadow-[0_0_15px_rgba(245,166,35,0.3)]">
-             Target [0.98]
+             Target [{debris.confidence ? debris.confidence.toFixed(2) : '0.98'}]
            </div>
          </Html>
       )}
@@ -107,6 +107,9 @@ export function RobotModel(props) {
   const inclineAngle = useStore((state) => state.inclineAngle)
   const collectingDebris = useStore((state) => state.collectingDebris)
   const collectProgress = useStore((state) => state.collectProgress)
+  const metalBinVolume = useStore((state) => state.metalBinVolume)
+  const nonMetalBinVolume = useStore((state) => state.nonMetalBinVolume)
+  const showHudLabels = useStore((state) => state.showHudLabels)
   const rampRotationX = -(90 - inclineAngle) * (Math.PI / 180)
   
   return (
@@ -466,11 +469,13 @@ export function RobotModel(props) {
           <boxGeometry args={[0.2, 0.2, 0.25]} />
           <meshStandardMaterial color="#94a3b8" roughness={0.3} metalness={0.8} />
         </mesh>
-        <Html position={[0, 0.25, 0]} center>
-          <div className="pointer-events-none transform -translate-x-1/2 -translate-y-1/2 scale-75 opacity-90">
-             <BlueprintCallout label="Metal Bin" value="0.89" unit="L" />
-          </div>
-        </Html>
+        {showHudLabels && (
+          <Html position={[0, 0.55, 0]} center>
+            <div className="pointer-events-none transform -translate-x-1/2 -translate-y-1/2 scale-75 opacity-90">
+               <BlueprintCallout label="Metal Bin" value={metalBinVolume} unit="L" />
+            </div>
+          </Html>
+        )}
       </RobotPart>
 
       <RobotPart 
@@ -483,11 +488,13 @@ export function RobotModel(props) {
           <boxGeometry args={[0.5, 0.35, 0.5]} />
           <meshStandardMaterial color="#1e293b" roughness={0.7} metalness={0.2} />
         </mesh>
-        <Html position={[0, 0.35, 0]} center>
-          <div className="pointer-events-none transform -translate-x-1/2 -translate-y-1/2 scale-75 opacity-90">
-             <BlueprintCallout label="Non-Metal Bin" value="7.8" unit="L" />
-          </div>
-        </Html>
+        {showHudLabels && (
+          <Html position={[0, 0.65, 0]} center>
+            <div className="pointer-events-none transform -translate-x-1/2 -translate-y-1/2 scale-75 opacity-90">
+               <BlueprintCallout label="Non-Metal Bin" value={nonMetalBinVolume} unit="L" />
+            </div>
+          </Html>
+        )}
       </RobotPart>
 
       {/* --- PROPULSION --- */}

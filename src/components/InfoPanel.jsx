@@ -47,6 +47,15 @@ export function InfoPanel() {
               <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${!useStore((s) => s.audioMuted) ? 'transform translate-x-4' : ''}`}></div>
             </div>
           </label>
+
+          <label className="flex items-center justify-between cursor-pointer group">
+            <span className="text-sm group-hover:text-primary transition-colors">HUD Labels</span>
+            <div className="relative">
+              <input type="checkbox" className="sr-only" checked={useStore((s) => s.showHudLabels)} onChange={useStore((s) => s.toggleHudLabels)} />
+              <div className={`block w-10 h-6 rounded-full transition-colors ${useStore((s) => s.showHudLabels) ? 'bg-primary' : 'bg-slate-700'}`}></div>
+              <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${useStore((s) => s.showHudLabels) ? 'transform translate-x-4' : ''}`}></div>
+            </div>
+          </label>
         </div>
       </div>
 

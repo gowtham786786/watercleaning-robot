@@ -124,22 +124,33 @@ export const useStore = create((set, get) => ({
     toggleAmbientAudio(nextMuted);
     if (!nextMuted) playBlip();
   },
+  
+  showHudLabels: true,
+  toggleHudLabels: () => {
+    if (!get().audioMuted) playBlip();
+    set((state) => ({ showHudLabels: !state.showHudLabels }))
+  },
 
   // Simulation State
+  collectedCount: 0,
+  metalBinVolume: 0.89,
+  nonMetalBinVolume: 7.8,
+  incrementStats: (type) => set((state) => {
+    const isMetal = type === 'can'; // Simple type check for metal
+    return {
+      collectedCount: state.collectedCount + 1,
+      metalBinVolume: Number((state.metalBinVolume + (isMetal ? (Math.random() * 0.1 + 0.05) : 0)).toFixed(2)),
+      nonMetalBinVolume: Number((state.nonMetalBinVolume + (!isMetal ? (Math.random() * 0.5 + 0.1) : 0)).toFixed(2))
+    };
+  }),
+
   debrisList: [
-    { id: 1, position: [-1.0, -0.2, 3.2], type: 'bottle' }
+    { id: 1, position: [-1.0, -0.2, 3.2], type: 'bottle', confidence: 0.98 }
   ],
   removeDebris: (id) => set((state) => ({ debrisList: state.debrisList.filter(d => d.id !== id) })),
-  spawnDebris: () => set((state) => {
+  spawnDebris: (newTarget) => set((state) => {
     if (state.debrisList && state.debrisList.length > 0) return state;
-    const newDebris = [
-      {
-        id: Date.now(),
-        position: [-1.0, -0.2, 3.2],
-        type: 'bottle'
-      }
-    ];
-    return { debrisList: newDebris };
+    return { debrisList: [newTarget] };
   }),
   
   isRunning: true,

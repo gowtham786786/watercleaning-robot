@@ -58,19 +58,26 @@ function WasteItem({ debris }) {
         {debris.type === 'bottle' ? <cylinderGeometry args={[0.05, 0.05, 0.2, 8]} /> : <boxGeometry args={[0.1, 0.02, 0.1]} />}
         <meshStandardMaterial color={color} roughness={0.3} metalness={0.1} />
         
-        <Html position={[0, 0.3, 0]} center zIndexRange={[100, 0]}>
-           <div className="bg-marine/80 text-secondary border border-secondary px-3 py-1.5 rounded-sm font-mono text-[10px] uppercase tracking-widest whitespace-nowrap backdrop-blur shadow-[0_0_15px_rgba(245,166,35,0.3)]">
-             Target [0.98]
-           </div>
-        </Html>
+        {useStore((s) => s.showHudLabels) && (
+          <Html position={[0, 0.3, 0]} center zIndexRange={[100, 0]}>
+             <div className="bg-marine/80 text-secondary border border-secondary px-3 py-1.5 rounded-sm font-mono text-[10px] uppercase tracking-widest whitespace-nowrap backdrop-blur shadow-[0_0_15px_rgba(245,166,35,0.3)]">
+               Target [{debris.confidence ? debris.confidence.toFixed(2) : '0.98'}]
+             </div>
+          </Html>
+        )}
       </mesh>
     </group>
   )
 }
 
+const WATER_BOUNDS = { minX: -8, maxX: 8, minZ: -8, maxZ: 8 };
+const ASV_SPEED = 0.8;
+const ASV_TURN_RATE = 2.0;
+const ARRIVAL_RADIUS = 2.2;
+
 function RobotRig() {
   const ref = useRef()
-  const { debrisList, removeDebris, spawnDebris, setCollectingDebris, setCollectProgress, setSimulationState, isRunning, inclineAngle } = useStore()
+  const { debrisList, removeDebris, spawnDebris, setCollectingDebris, setCollectProgress, setSimulationState, isRunning, inclineAngle, collectedCount, incrementStats, showHudLabels } = useStore()
   
   const [navState, setNavState] = React.useState('IDLE') // IDLE, NAVIGATING, COLLECTING
   const [targetId, setTargetId] = React.useState(null)
@@ -126,29 +133,37 @@ function RobotRig() {
       const dz = target.position[2] - robotPos.current.z
       const dist = Math.hypot(dx, dz)
       
-      // Target reached (distance < 2.2 since ramp sticks out in front)
-      if (dist < 2.2) {
+      // Target reached (distance < ARRIVAL_RADIUS since ramp sticks out in front)
+      if (dist < ARRIVAL_RADIUS) {
         setNavState('COLLECTING')
         collectionTimer.current = 0
         setCollectingDebris(target)
         removeDebris(target.id)
+        incrementStats(target.type)
         setSimulationState({ systemStatus: 'Moving' })
         return
       }
       
-      // Move towards target
-      const speed = 0.5 * delta
-      robotPos.current.x += (dx / dist) * speed
-      robotPos.current.z += (dz / dist) * speed
-      
       // Rotate towards target (smoothly)
       const targetAngle = Math.atan2(dx, dz)
-      const angleDiff = targetAngle - robotRotY.current
-      const normalizedDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff))
-      robotRotY.current += normalizedDiff * 3 * delta
+      let angleDiff = targetAngle - robotRotY.current
+      // Normalize angle diff to -PI to PI
+      angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff))
+      
+      robotRotY.current += angleDiff * ASV_TURN_RATE * delta
+      
+      // Move forward along CURRENT heading if roughly facing target
+      const moveSpeed = ASV_SPEED * delta
+      if (Math.abs(angleDiff) < Math.PI / 4) {
+         robotPos.current.x += Math.sin(robotRotY.current) * moveSpeed
+         robotPos.current.z += Math.cos(robotRotY.current) * moveSpeed
+      }
       
       ref.current.position.set(robotPos.current.x, Math.sin(time * 2) * 0.02, robotPos.current.z)
-      ref.current.rotation.set(Math.sin(time * 1.5) * 0.01, robotRotY.current, Math.sin(time) * 0.02)
+      // Add slight roll based on turning and pitch based on movement
+      const pitch = Math.sin(time * 1.5) * 0.02 + 0.02 // slightly pitched up when moving
+      const roll = Math.sin(time) * 0.02 - (angleDiff * 0.1) // roll into turns
+      ref.current.rotation.set(pitch, robotRotY.current, roll)
       
     } else if (navState === 'COLLECTING') {
       collectionTimer.current += delta
@@ -160,8 +175,23 @@ function RobotRig() {
       } else {
         setCollectingDebris(null)
         setCollectProgress(0)
-        spawnDebris()
         setNavState('IDLE')
+        
+        // Random 2-5s cooldown before next target
+        setTimeout(() => {
+          const type = Math.random() > 0.5 ? 'bottle' : 'leaf';
+          const target = {
+            id: Date.now(),
+            position: [
+              WATER_BOUNDS.minX + Math.random() * (WATER_BOUNDS.maxX - WATER_BOUNDS.minX),
+              -0.2,
+              WATER_BOUNDS.minZ + Math.random() * (WATER_BOUNDS.maxZ - WATER_BOUNDS.minZ)
+            ],
+            type: type,
+            confidence: 0.85 + Math.random() * 0.14
+          };
+          spawnDebris(target);
+        }, 2000 + Math.random() * 3000);
       }
       
       // Idle bobbing
@@ -176,26 +206,35 @@ function RobotRig() {
       <RobotModel />
       
       {/* 3D Blueprint Callouts attached to the Robot */}
-      <Html position={[1.5, 0.5, 0]} center>
-        <div className="pointer-events-none transform scale-75 opacity-80 bg-marine/40 backdrop-blur-sm p-2 rounded-lg border border-cyan-500/30">
-           <BlueprintCallout label="Width" value="41" unit="cm" />
-        </div>
-      </Html>
-      <Html position={[-1.5, 0.5, 0]} center>
-        <div className="pointer-events-none transform scale-75 opacity-80 bg-marine/40 backdrop-blur-sm p-2 rounded-lg border border-cyan-500/30">
-           <BlueprintCallout label="Height" value="34" unit="cm" />
-        </div>
-      </Html>
-      <Html position={[0, 0.5, 2.0]} center>
-        <div className="pointer-events-none transform scale-75 opacity-80 bg-marine/40 backdrop-blur-sm p-2 rounded-lg border border-cyan-500/30">
-           <BlueprintCallout label="Length" value="88" unit="cm" />
-        </div>
-      </Html>
-      <Html position={[0, 0.8, -2.0]} center>
-        <div className="pointer-events-none transform scale-75 opacity-80 bg-marine/40 backdrop-blur-sm p-2 rounded-lg border border-cyan-500/30">
-           <BlueprintCallout label="Incline" value={inclineAngle} unit="°" />
-        </div>
-      </Html>
+      {showHudLabels && (
+        <>
+          <Html position={[1.5, 0.5, 0]} center>
+            <div className="pointer-events-none transform scale-75 opacity-80 bg-marine/40 backdrop-blur-sm p-2 rounded-lg border border-cyan-500/30">
+               <BlueprintCallout label="Width" value="41" unit="cm" />
+            </div>
+          </Html>
+          <Html position={[-1.8, 0.5, 0]} center>
+            <div className="pointer-events-none transform scale-75 opacity-80 bg-marine/40 backdrop-blur-sm p-2 rounded-lg border border-cyan-500/30">
+               <BlueprintCallout label="Height" value="34" unit="cm" />
+            </div>
+          </Html>
+          <Html position={[0, 0.5, 2.0]} center>
+            <div className="pointer-events-none transform scale-75 opacity-80 bg-marine/40 backdrop-blur-sm p-2 rounded-lg border border-cyan-500/30">
+               <BlueprintCallout label="Length" value="88" unit="cm" />
+            </div>
+          </Html>
+          <Html position={[0, 0.8, -2.0]} center>
+            <div className="pointer-events-none transform scale-75 opacity-80 bg-marine/40 backdrop-blur-sm p-2 rounded-lg border border-cyan-500/30">
+               <BlueprintCallout label="Incline" value={inclineAngle} unit="°" />
+            </div>
+          </Html>
+          <Html position={[1.5, 0.8, -1.0]} center>
+            <div className="pointer-events-none transform scale-75 opacity-80 bg-marine/40 backdrop-blur-sm p-2 rounded-lg border border-cyan-500/30">
+               <BlueprintCallout label="Collected" value={collectedCount} unit="" />
+            </div>
+          </Html>
+        </>
+      )}
     </group>
   )
 }
