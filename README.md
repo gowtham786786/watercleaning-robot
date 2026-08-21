@@ -45,7 +45,7 @@ The physical prototype of this system was validated across 12 statistically powe
 <table>
   <tr>
     <td><img src="docs/readme-assets/top-down-view.jpg" alt="Top Down View" width="100%"/></td>
-    <td><img src="docs/readme-assets/side-angle.jpg" alt="Side Angle View" width="100%"/></td>
+    <td><img src="docs/readme-assets/side-angle.png" alt="Side Angle View" width="100%"/></td>
     <td><img src="docs/readme-assets/water-collection.jpg" alt="Water Collection" width="100%"/></td>
   </tr>
 </table>
