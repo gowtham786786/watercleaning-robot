@@ -1,10 +1,11 @@
 ![Hero Cover](docs/readme-assets/hero-cover.jpg)
 
 # Autonomous Water Cleaning Robot - Digital Twin
-> An interactive digital twin of a surface water cleaning robot with onboard waste classification.
+> An interactive digital twin of a surface water cleaning robot with onboard waste classification, real-time telemetry, and interactive system architecture.
 
 [![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)](https://reactjs.org/)
 [![Threejs](https://img.shields.io/badge/threejs-black?style=for-the-badge&logo=three.js&logoColor=white)](https://threejs.org/)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Vercel-success?style=for-the-badge&logo=vercel)](https://watercleaning-robot.vercel.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
 ## Overview
@@ -24,12 +25,14 @@ The physical prototype of this system was validated across 12 statistically powe
 | Recycling value recovery vs. baseline | 2.9× |
 | Areal coverage rate vs. baseline | 3.4× |
 
-## Features
-- **Interactive 3D Procedural Model:** A 1:1 scale representation of the physical prototype, built using primitive geometries to maintain high performance.
-- **Exploded View Analysis:** Separate the components along the Y-axis to inspect internal architecture, propulsion, and segregation mechanisms.
-- **Simulated Telemetry:** A live dashboard showing simulated data for battery consumption, RPM, speed, and real-time waste collection counts.
-- **Waste Detection Simulation:** Visualizes the robot's dynamic behavior when encountering floating surface waste (scanning, approaching, collecting).
-- **Responsive & Performant:** Built with React Three Fiber and heavily optimized to sustain 60fps on mid-range devices.
+## Key Features
+- **Interactive 3D Digital Twin:** A 1:1 scale procedural model of the catamaran vessel featuring dual pontoon hulls, paddle wheels, dual conveyor elevator systems, and dual sorted bins.
+- **Interactive System Architecture & Workflow Modals (Fig. 2a):** Every tool and subsystem block in the signal & power architecture diagram (Raspberry Pi 4, ESP32 hub, Li-Ion/Power bank supplies, L298N drivers, motors, ultrasonic/camera/metal sensors, sorting servo, and collection bins) is interactively clickable. Clicking any node opens a technical modal detailing its operational role, key functions, hardware parameters, and signal connections.
+- **Realistic Multi-Type Aquatic Debris Simulation:** Dynamically renders diverse river pollutants including crushed beverage cans, plastic bottles, snack wrappers, foam containers, organic river weeds, leaves, and driftwood.
+- **Interactive Pause & Simulation Controls:** Live pause/play control toggle allows freezing robot motion and water drift for detailed inspection without resetting session state.
+- **Exploded View Analysis:** Dynamically separates internal mechanical and electrical assemblies along the Y-axis to inspect internal conveyor gears, battery compartments, and segregation chutes.
+- **Real-Time Telemetry Dashboard:** Monitors live battery discharge, thruster RPM, cruising speed, and metal vs. non-metal collection counts.
+- **Fully Responsive Architecture:** Built with React 19, Three.js, and TailwindCSS v4 with full touch, mouse, and keyboard accessibility.
 
 ## System Snapshot
 ![System Architecture Diagram](docs/readme-assets/architecture-diagram.png)
