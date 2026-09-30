@@ -37,12 +37,21 @@ The physical prototype of this system was validated across 12 statistically powe
 ## System Snapshot
 ![System Architecture Diagram](docs/readme-assets/architecture-diagram.png)
 
-**Hardware Specifications:**
-- **Platform Dimensions:** 88×41×34 cm, 3.75 kg displacement
-- **Conveyor:** 47×22 cm, 28° incline
-- **Sensors:** KY-036 inductive sensor, MG996R sorting servo, 4× HC-SR04 ultrasonic array
-- **Control Architecture:** Raspberry Pi 4 paired with ESP32-WROOM-32 (UART / JSON / CRC-8)
-- **Power:** 10 Ah 12V LiPo battery, 38.4 W average draw
+### Core Hardware Specifications & Pinout Map
+
+| Subsystem | Hardware Component | Interface / Protocol | Operating Rating | Primary Function |
+|---|---|---|---|---|
+| **Central Compute** | Raspberry Pi 4 Model B | MIPI CSI-2 / UART (115200 baud) | 5.1V DC / 3.0A | High-level YOLOv8-nano vision detection & path planning |
+| **Microcontroller** | ESP32-WROOM-32 | 16-ch LEDC PWM / SAR ADC | 3.3V Logic / 5V VIN | Real-time PID motor drive & sensor interrupt reflex |
+| **Material Sensing** | KY-036 Inductive Coil | Analog / TTL Interrupt (< 2ms) | 5V DC | Electromagnetic metallic debris identification |
+| **Waste Segregation** | MG996R Metal Gear Servo | 50 Hz PWM (1000–2000 µs) | 6.0V DC / 11 kg-cm | 0.17s mechanical diverter flipper gate actuation |
+| **Obstacle Avoidance** | 4× HC-SR04 Ultrasonic | GPIO Trigger / Echo pulses | 5V DC / 40 kHz | 360° perimeter obstacle avoidance (95.6% reliability) |
+| **Elevator Intake** | 12V DC Planetary Gear Motor | L298N Dual H-Bridge Channel A | 12V DC / 60 RPM | 47×22 cm inclined mesh conveyor collection drive |
+| **Transfer Belt** | 12V DC Precision Gear Motor | L298N Dual H-Bridge Channel B | 12V DC / 0.12 m/s | 18×14 cm secondary metal scanning conveyor drive |
+| **Vessel Propulsion** | 2× High-Torque Paddle Wheels | L298N Dual H-Bridge #2 | 12V DC / 0.85 m/s | Differential cruising, station-keeping & zero-turn yaw |
+| **Actuator Power** | 3S2P Li-Ion Battery Pack | 20A continuous discharge / BMS | 11.1V – 12.6V / 5.2 Ah | High-current isolated rail for 4 DC motors & servo |
+| **Compute Power** | Dedicated USB-C Power Bank | Galvanically isolated rail | 5.1V DC / 3.1A / 20 Ah | Clean surge-protected supply preventing SBC brownouts |
+| **Storage Bins** | Dual Perforated ABS Bins | Gravity chute discharge | 2× 2.5 kg / 22.5L each | Fast-draining segregated metal & non-metal storage |
 
 ## Gallery
 <table>
