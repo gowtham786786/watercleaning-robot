@@ -7,7 +7,6 @@ export function SystemArchitecture() {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false)
   const [lightboxZoom, setLightboxZoom] = useState(1)
   const [selectedNode, setSelectedNode] = useState(null)
-  const [hoveredNodeId, setHoveredNodeId] = useState(null)
 
   return (
     <div className="w-full h-full flex flex-col justify-between bg-surface/90 border border-border/80 rounded-xl overflow-hidden shadow-2xl relative">
@@ -77,50 +76,28 @@ export function SystemArchitecture() {
               loading="eager"
             />
 
-            {/* --- INTERACTIVE HOTSPOT OVERLAY LAYER --- */}
+            {/* --- INTERACTIVE HOTSPOT OVERLAY LAYER (100% transparent, clean click targets) --- */}
             <div className="absolute inset-0 pointer-events-none">
-              {WORKFLOW_NODES.map((node) => {
-                const isHovered = hoveredNodeId === node.id
-                return (
-                  <button
-                    key={node.id}
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setSelectedNode(node)
-                    }}
-                    onMouseEnter={() => setHoveredNodeId(node.id)}
-                    onMouseLeave={() => setHoveredNodeId(null)}
-                    style={{
-                      left: `${node.coords.cx}%`,
-                      top: `${node.coords.cy}%`,
-                      width: `${node.coords.r * 2}%`,
-                      // Height normalized to image aspect ratio (798 / 970) so button is circular
-                      height: `${node.coords.r * 2 * (798 / 970)}%`,
-                      transform: 'translate(-50%, -50%)'
-                    }}
-                    className={`absolute rounded-full pointer-events-auto transition-colors duration-150 cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary ${
-                      isHovered
-                        ? 'border-2 border-primary/80 bg-primary/10 z-30'
-                        : 'border border-transparent hover:border-primary/50'
-                    }`}
-                    title={`Click to inspect ${node.name}`}
-                    aria-label={`Inspect ${node.name}`}
-                  >
-                    {/* Tooltip on Hover */}
-                    {isHovered && (
-                      <div 
-                        className={`absolute left-1/2 -translate-x-1/2 px-2 py-0.5 bg-slate-950/95 text-white text-[10px] font-mono rounded shadow-lg border border-primary/60 whitespace-nowrap pointer-events-none z-40 flex items-center gap-1.5 ${
-                          node.coords.cy > 75 ? '-top-7' : '-bottom-7'
-                        }`}
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                        <span className="font-medium">{node.name}</span>
-                      </div>
-                    )}
-                  </button>
-                )
-              })}
+              {WORKFLOW_NODES.map((node) => (
+                <button
+                  key={node.id}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setSelectedNode(node)
+                  }}
+                  style={{
+                    left: `${node.coords.cx}%`,
+                    top: `${node.coords.cy}%`,
+                    width: `${node.coords.r * 2}%`,
+                    height: `${node.coords.r * 2 * (798 / 970)}%`,
+                    transform: 'translate(-50%, -50%)'
+                  }}
+                  className="absolute rounded-full pointer-events-auto cursor-pointer focus:outline-none bg-transparent"
+                  title={`Click to view ${node.name} specifications & role`}
+                  aria-label={`Inspect ${node.name}`}
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -246,8 +223,8 @@ export function SystemArchitecture() {
                         height: `${node.coords.r * 2 * (798 / 970)}%`,
                         transform: 'translate(-50%, -50%)'
                       }}
-                      className="absolute rounded-full pointer-events-auto border border-primary/30 hover:border-primary bg-primary/10 hover:bg-primary/30 transition-all cursor-pointer shadow-[0_0_10px_rgba(45,212,191,0.4)]"
-                      title={`Click to inspect ${node.name}`}
+                      className="absolute rounded-full pointer-events-auto cursor-pointer focus:outline-none bg-transparent"
+                      title={`Click to view ${node.name} specifications & role`}
                     />
                   ))}
                 </div>
