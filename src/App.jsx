@@ -1,8 +1,8 @@
 import React, { Suspense } from 'react'
 import { Hero } from './components/Hero'
-import { Dashboard } from './components/Dashboard'
 import { InfoPanel } from './components/InfoPanel'
 import { Engineering } from './components/Engineering'
+import { ResultsValidation } from './components/ResultsValidation'
 import { Content } from './components/Content'
 import { Gallery } from './components/Gallery'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -36,14 +36,10 @@ function App() {
         </div>
       </section>
 
-      {/* Dashboard Section */}
-      <section className="w-full bg-marine border-b border-border py-12 px-6">
-        <div className="max-w-screen-2xl mx-auto">
-           <Dashboard />
-        </div>
-      </section>
+
 
       <Engineering />
+      <ResultsValidation />
       <Gallery />
       <Content />
     </div>

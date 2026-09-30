@@ -1,38 +1,36 @@
 
-function ClimbingDebris({ debris, progress }) {
-  if (!debris) return null;
-  
-  // Progress goes from 0 to 1
-  // Ramp goes from y=-1.45 to y=0.45
-  const yPos = -1.45 + progress * 1.9;
-  const color = debris.type === 'bottle' ? '#2DD4BF' : debris.type === 'leaf' ? '#14b8a6' : '#F5A623';
-  
-  const scale = progress > 0.8 ? Math.max(0, 1 - (progress - 0.8) * 5) : 1;
-  const showLabel = progress < 0.8;
-
-  return (
-    <group position={[0, yPos, 0.05]} scale={scale}>
-      <mesh castShadow receiveShadow>
-        {debris.type === 'bottle' ? <cylinderGeometry args={[0.05, 0.05, 0.2, 8]} /> : <boxGeometry args={[0.1, 0.02, 0.1]} />}
-        <meshStandardMaterial color={color} roughness={0.3} metalness={0.1} />
-      </mesh>
-      
-      {showLabel && (
-         <Html position={[0, 0.3, 0]} center zIndexRange={[100, 0]}>
-           <div className="bg-marine/80 text-secondary border border-secondary px-3 py-1.5 rounded-sm font-mono text-[10px] uppercase tracking-widest whitespace-nowrap backdrop-blur shadow-[0_0_15px_rgba(245,166,35,0.3)]">
-             Target [{debris.confidence ? debris.confidence.toFixed(2) : '0.98'}]
-           </div>
-         </Html>
-      )}
-    </group>
-  );
-}
 import React, { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useStore } from '../store/useStore'
 import * as THREE from 'three'
 import { Text, Html, QuadraticBezierLine } from '@react-three/drei'
 import { BlueprintCallout } from '../components/BlueprintCallout'
+import { DebrisMesh } from './DebrisMesh'
+
+function ClimbingDebris({ debris, progress }) {
+  const showHudLabels = useStore((state) => state.showHudLabels);
+  if (!debris) return null;
+  
+  // Progress goes from 0 to 1
+  // Ramp goes from y=-1.45 to y=0.45
+  const yPos = -1.45 + progress * 1.9;
+  const scale = progress > 0.8 ? Math.max(0, 1 - (progress - 0.8) * 5) : 1;
+  const showLabel = progress < 0.8 && showHudLabels;
+
+  return (
+    <group position={[0, yPos, 0.05]} scale={scale}>
+      <DebrisMesh type={debris.type} id={debris.id} />
+      
+      {showLabel && (
+         <Html position={[0, 0.25, 0]} center zIndexRange={[100, 0]}>
+           <div className="bg-marine/80 text-secondary border border-secondary px-2.5 py-1 rounded-sm font-mono text-[10px] uppercase tracking-widest whitespace-nowrap backdrop-blur shadow-[0_0_15px_rgba(245,166,35,0.3)]">
+             {debris.label || debris.type} [{debris.confidence ? debris.confidence.toFixed(2) : '0.98'}]
+           </div>
+         </Html>
+      )}
+    </group>
+  );
+}
 
 
 // A reusable component part that can be clicked and exploded

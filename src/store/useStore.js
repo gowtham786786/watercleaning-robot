@@ -125,32 +125,60 @@ export const useStore = create((set, get) => ({
     if (!nextMuted) playBlip();
   },
   
-  showHudLabels: true,
+  showHudLabels: false,
   toggleHudLabels: () => {
     if (!get().audioMuted) playBlip();
     set((state) => ({ showHudLabels: !state.showHudLabels }))
   },
 
-  // Simulation State
+  isPaused: false,
+  togglePause: () => {
+    if (!get().audioMuted) playBlip();
+    set((state) => {
+      const nextPaused = !state.isPaused;
+      return { 
+        isPaused: nextPaused, 
+        isRunning: !nextPaused,
+        systemStatus: nextPaused ? 'Paused' : 'Scanning'
+      };
+    });
+  },
+
+  // Simulation State & Segregated Bin Accumulation
   collectedCount: 0,
   metalBinVolume: 0.89,
   nonMetalBinVolume: 7.8,
+  lastCollectedType: null,
   incrementStats: (type) => set((state) => {
-    const isMetal = type === 'can'; // Simple type check for metal
+    const isMetal = type === 'can' || type === 'metal';
     return {
       collectedCount: state.collectedCount + 1,
-      metalBinVolume: Number((state.metalBinVolume + (isMetal ? (Math.random() * 0.1 + 0.05) : 0)).toFixed(2)),
-      nonMetalBinVolume: Number((state.nonMetalBinVolume + (!isMetal ? (Math.random() * 0.5 + 0.1) : 0)).toFixed(2))
+      lastCollectedType: type,
+      metalBinVolume: Number((state.metalBinVolume + (isMetal ? (Math.random() * 0.08 + 0.04) : 0)).toFixed(2)),
+      nonMetalBinVolume: Number((state.nonMetalBinVolume + (!isMetal ? (Math.random() * 0.25 + 0.08) : 0)).toFixed(2))
     };
   }),
 
+  // Realistic River Debris Field (Matching diverse floating waste)
   debrisList: [
-    { id: 1, position: [-1.0, -0.2, 3.2], type: 'bottle', confidence: 0.98 }
+    { id: 1, position: [-1.2, -0.2, 2.8], type: 'bottle', label: 'PET Bottle', confidence: 0.98 },
+    { id: 2, position: [1.6, -0.2, 3.4], type: 'can', label: 'Beverage Can', confidence: 0.96 },
+    { id: 3, position: [-2.4, -0.2, 1.9], type: 'leaf', label: 'River Foliage', confidence: 0.94 },
+    { id: 4, position: [0.6, -0.2, 4.2], type: 'bag', label: 'Plastic Bag', confidence: 0.91 },
+    { id: 5, position: [2.8, -0.2, -1.8], type: 'styrofoam', label: 'Styrofoam Foam', confidence: 0.95 },
+    { id: 6, position: [-3.0, -0.2, 3.6], type: 'snack_pack', label: 'Snack Wrapper', confidence: 0.92 },
+    { id: 7, position: [1.4, -0.2, -2.6], type: 'bottle', label: 'Water Bottle', confidence: 0.97 },
+    { id: 8, position: [-1.6, -0.2, -3.4], type: 'can', label: 'Soda Can', confidence: 0.95 },
+    { id: 9, position: [3.2, -0.2, 2.2], type: 'leaf', label: 'Aquatic Weeds', confidence: 0.93 },
+    { id: 10, position: [-2.0, -0.2, -1.5], type: 'bag', label: 'Polythene Film', confidence: 0.89 },
+    { id: 11, position: [0.2, -0.2, -4.2], type: 'styrofoam', label: 'Takeaway Foam', confidence: 0.96 },
+    { id: 12, position: [2.5, -0.2, 4.5], type: 'snack_pack', label: 'Foil Pouch', confidence: 0.94 }
   ],
   removeDebris: (id) => set((state) => ({ debrisList: state.debrisList.filter(d => d.id !== id) })),
   spawnDebris: (newTarget) => set((state) => {
-    if (state.debrisList && state.debrisList.length > 0) return state;
-    return { debrisList: [newTarget] };
+    // Keep active river debris field populated up to 14 items
+    if (state.debrisList && state.debrisList.length >= 14) return state;
+    return { debrisList: [...state.debrisList, newTarget] };
   }),
   
   isRunning: true,

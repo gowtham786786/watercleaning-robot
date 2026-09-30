@@ -42,7 +42,7 @@ export function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-8 relative z-10 mb-10">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 relative z-10 mb-10">
         <BlueprintCallout 
           label="Mission Endurance" 
           value="52.3 ± 8.1" 
@@ -52,6 +52,7 @@ export function Dashboard() {
           label="Cruise Speed" 
           value="0.25" 
           unit="m/s" 
+          subtext="Tested: 0.18–0.25 m/s"
         />
         <BlueprintCallout 
           label="Control Latency" 
@@ -62,6 +63,19 @@ export function Dashboard() {
           label="Collection Effic." 
           value="87.9 ± 3.2" 
           unit="%" 
+          subtext="Peak trial: 91.7%"
+        />
+        <BlueprintCallout 
+          label="Sensor Update" 
+          value="20" 
+          unit="Hz" 
+          subtext="Sonar / Inductive"
+        />
+        <BlueprintCallout 
+          label="UART Reliability" 
+          value="99.2" 
+          unit="%" 
+          subtext="Pi4 ↔ ESP32 Link"
         />
       </div>
 

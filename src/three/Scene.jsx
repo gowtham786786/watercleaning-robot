@@ -5,11 +5,13 @@ import { RobotModel } from './RobotModel'
 import { useStore } from '../store/useStore'
 import * as THREE from 'three'
 import { BlueprintCallout } from '../components/BlueprintCallout'
+import { DebrisMesh } from './DebrisMesh'
 
 // Simulated water plane
 function WaterPlane() {
   const nightMode = useStore((state) => state.nightMode)
   const explodedView = useStore((state) => state.explodedView)
+  const isRunning = useStore((state) => state.isRunning)
   const waterNormals = useLoader(THREE.TextureLoader, '/waternormals.jpg')
 
   useMemo(() => {
@@ -18,6 +20,7 @@ function WaterPlane() {
   }, [waterNormals])
 
   useFrame((state, delta) => {
+    if (!isRunning) return
     // Calmer lake water has slower wave motion
     waterNormals.offset.x -= delta * 0.004
     waterNormals.offset.y += delta * 0.004
@@ -44,29 +47,30 @@ function WaterPlane() {
   )
 }
 
-
 function WasteItem({ debris }) {
   const meshRef = useRef()
+  const showHudLabels = useStore((s) => s.showHudLabels)
+  const isRunning = useStore((s) => s.isRunning)
+
   useFrame((state) => {
+    if (!isRunning) return
     if (meshRef.current) {
-      meshRef.current.position.y = Math.sin(state.clock.elapsedTime * 2 + debris.id) * 0.05
+      meshRef.current.position.y = Math.sin(state.clock.elapsedTime * 1.8 + debris.id) * 0.03 - 0.18
+      meshRef.current.rotation.y += 0.002
     }
   })
-  const color = debris.type === 'bottle' ? '#2DD4BF' : debris.type === 'leaf' ? '#14b8a6' : '#F5A623'
+
   return (
-    <group position={debris.position}>
-      <mesh ref={meshRef} castShadow receiveShadow>
-        {debris.type === 'bottle' ? <cylinderGeometry args={[0.05, 0.05, 0.2, 8]} /> : <boxGeometry args={[0.1, 0.02, 0.1]} />}
-        <meshStandardMaterial color={color} roughness={0.3} metalness={0.1} />
-        
-        {useStore((s) => s.showHudLabels) && (
-          <Html position={[0, 0.3, 0]} center zIndexRange={[100, 0]}>
-             <div className="bg-marine/80 text-secondary border border-secondary px-3 py-1.5 rounded-sm font-mono text-[10px] uppercase tracking-widest whitespace-nowrap backdrop-blur shadow-[0_0_15px_rgba(245,166,35,0.3)]">
-               Target [{debris.confidence ? debris.confidence.toFixed(2) : '0.98'}]
-             </div>
-          </Html>
-        )}
-      </mesh>
+    <group ref={meshRef} position={debris.position}>
+      <DebrisMesh type={debris.type} id={debris.id} />
+      
+      {showHudLabels && (
+        <Html position={[0, 0.28, 0]} center zIndexRange={[100, 0]}>
+          <div className="bg-marine/85 text-secondary border border-secondary/80 px-2.5 py-1 rounded-sm font-mono text-[9.5px] uppercase tracking-wider whitespace-nowrap backdrop-blur shadow-[0_0_12px_rgba(245,166,35,0.25)]">
+            {debris.label || debris.type} [{debris.confidence ? debris.confidence.toFixed(2) : '0.96'}]
+          </div>
+        </Html>
+      )}
     </group>
   )
 }
@@ -178,21 +182,30 @@ function RobotRig() {
         setCollectProgress(0)
         setNavState('IDLE')
         
-        // Random 2-5s cooldown before next target
+        // Spawn next river debris from diverse categories
         setTimeout(() => {
-          const type = Math.random() > 0.5 ? 'bottle' : 'leaf';
+          const types = [
+            { type: 'bottle', label: 'PET Bottle' },
+            { type: 'can', label: 'Beverage Can' },
+            { type: 'bag', label: 'Plastic Bag' },
+            { type: 'leaf', label: 'Aquatic Foliage' },
+            { type: 'styrofoam', label: 'Styrofoam Foam' },
+            { type: 'snack_pack', label: 'Snack Wrapper' }
+          ];
+          const choice = types[Math.floor(Math.random() * types.length)];
           const target = {
             id: Date.now(),
             position: [
-              WATER_BOUNDS.minX + Math.random() * (WATER_BOUNDS.maxX - WATER_BOUNDS.minX),
+              WATER_BOUNDS.minX * 0.7 + Math.random() * (WATER_BOUNDS.maxX * 1.4),
               -0.2,
-              WATER_BOUNDS.minZ + Math.random() * (WATER_BOUNDS.maxZ - WATER_BOUNDS.minZ)
+              WATER_BOUNDS.minZ * 0.7 + Math.random() * (WATER_BOUNDS.maxZ * 1.4)
             ],
-            type: type,
-            confidence: 0.85 + Math.random() * 0.14
+            type: choice.type,
+            label: choice.label,
+            confidence: 0.88 + Math.random() * 0.11
           };
           spawnDebris(target);
-        }, 2000 + Math.random() * 3000);
+        }, 1500 + Math.random() * 2500);
       }
       
       // Idle bobbing
