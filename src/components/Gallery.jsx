@@ -27,7 +27,7 @@ export function Gallery() {
     { 
       id: 4, 
       label: "Surface Debris Ingestion", 
-      desc: "Sustained 1.23 kg/hr continuous surface harvesting", 
+      desc: "Sustained 1.23 kg/hr continuous surface harvesting in pool testing", 
       src: "/gallery/water-collection-1.jpg" 
     },
     { 
@@ -67,15 +67,15 @@ export function Gallery() {
             transition={{ delay: idx * 0.08, duration: 0.5, ease: "easeOut" }}
             viewport={{ once: true }}
             onClick={() => setSelectedImage(img)}
-            className="group relative aspect-video bg-surface border border-border/80 rounded-lg overflow-hidden cursor-pointer shadow-md hover:border-primary/50 transition-all"
+            className="group relative aspect-[16/10] bg-surface border border-border/80 rounded-lg overflow-hidden cursor-pointer shadow-lg hover:border-primary/50 transition-all"
           >
             {/* Ambient hover gradient */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10 transition-opacity duration-300"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent z-10 transition-opacity duration-300"></div>
             
             <img 
               src={img.src} 
               alt={img.label} 
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
               loading="lazy"
             />
 
@@ -118,11 +118,11 @@ export function Gallery() {
               </button>
             </div>
 
-            <div className="p-2 flex items-center justify-center bg-black/50">
+            <div className="p-3 flex items-center justify-center bg-black/70">
               <img 
                 src={selectedImage.src} 
                 alt={selectedImage.label} 
-                className="max-h-[70vh] w-auto object-contain rounded"
+                className="max-h-[75vh] w-auto object-contain rounded-lg shadow-xl"
               />
             </div>
           </div>

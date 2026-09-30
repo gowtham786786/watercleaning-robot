@@ -1,13 +1,13 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { CheckCircle2, Award, Zap, ShieldCheck, Target, ArrowUpRight, Sparkles } from 'lucide-react'
+import { Award, Zap, ShieldCheck, Target, ArrowUpRight, Sparkles } from 'lucide-react'
 
 const keyMetrics = [
   {
     title: "Source Recycling Yield",
     value: "86.2%",
-    comparison: "+43.2% vs conventional",
-    desc: "Achieved through real-time at-source sorting, compared to only 43.0% recovery in non-sorting skimmers.",
+    comparison: "+43.2% vs conventional (43.0%)",
+    desc: "Achieved through real-time at-source segregation, elevating usable recovery compared to non-sorting skimmers.",
     icon: Award,
     highlight: "Primary Impact Metric"
   },
@@ -54,7 +54,7 @@ export function ResultsValidation() {
       </div>
 
       {/* 4 Sleek Impact Metric Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {keyMetrics.map((item, idx) => {
           const Icon = item.icon
           return (
@@ -64,7 +64,7 @@ export function ResultsValidation() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.1, duration: 0.5, ease: "easeOut" }}
               viewport={{ once: true }}
-              className="glass-panel p-6 border border-border/70 hover:border-primary/50 transition-all flex flex-col justify-between group"
+              className="glass-panel p-6 border border-border/70 hover:border-primary/50 transition-all flex flex-col justify-between group shadow-lg"
             >
               <div>
                 <div className="flex items-center justify-between mb-4">
@@ -102,52 +102,6 @@ export function ResultsValidation() {
             </motion.div>
           )
         })}
-      </div>
-
-      {/* Clean Executive Comparison Spotlight */}
-      <div className="glass-panel p-6 md:p-8 border border-border/70 overflow-hidden relative">
-        <div className="grid md:grid-cols-2 gap-8 items-center">
-          <div className="space-y-4">
-            <span className="text-xs font-mono text-primary uppercase tracking-widest font-semibold">
-              The Selective Advantage
-            </span>
-            <h3 className="text-2xl font-bold text-text-main leading-snug">
-              Why Sorting at the Water Surface Changes Recycling Economics
-            </h3>
-            <p className="text-sm text-text-muted leading-relaxed">
-              Conventional surface skimmers collect all debris into a single mixed mass. Wet, contaminated plastics mixed with metals and biomass require hazardous manual separation and degrade recycling value.
-            </p>
-          </div>
-
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div className="p-4 rounded-lg bg-surface/40 border border-border/60">
-              <span className="text-xs font-mono text-text-muted uppercase tracking-wider block mb-2">
-                Conventional Skimmer
-              </span>
-              <div className="text-2xl font-mono font-bold text-text-muted mb-2">
-                43.0%
-              </div>
-              <p className="text-xs text-text-muted/80 leading-relaxed">
-                Bulk collection without sorting. High cross-contamination caps downstream recycling yield.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-lg bg-primary/5 border border-primary/40 shadow-[0_0_20px_rgba(45,212,191,0.08)]">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-mono text-primary uppercase tracking-wider font-semibold">
-                  Our Proposed USV
-                </span>
-                <CheckCircle2 size={15} className="text-primary" />
-              </div>
-              <div className="text-2xl font-mono font-bold text-primary mb-2">
-                86.2%
-              </div>
-              <p className="text-xs text-text-main/80 leading-relaxed">
-                Autonomous real-time segregation doubles the usable recycling yield straight from the water.
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   )
