@@ -226,7 +226,7 @@ export function WorkflowNodeModal({ node, allNodes, onClose, onSelectNode }) {
         {/* --- MODAL FOOTER --- */}
         <div className="px-5 sm:px-6 py-3.5 bg-[#0A1322] border-t border-slate-800 flex items-center justify-between flex-wrap gap-2 text-xs font-mono text-slate-400">
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-emerald-400" />
             <span>Autonomous Water Surface Cleaning Platform · Fig. 2a</span>
           </div>
 

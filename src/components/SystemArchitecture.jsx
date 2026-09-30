@@ -14,7 +14,7 @@ export function SystemArchitecture() {
       {/* --- TOP HEADER TOOLBAR --- */}
       <div className="flex items-center justify-between px-4 py-3 bg-marine/95 border-b border-border/80 z-10 shrink-0 flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+          <div className="w-2 h-2 rounded-full bg-primary" />
           <span className="font-mono text-xs uppercase tracking-wider text-primary font-bold">
             System Architecture
           </span>
@@ -26,7 +26,7 @@ export function SystemArchitecture() {
 
         <div className="flex items-center gap-2">
           <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-mono text-cyan-400/90 bg-cyan-950/40 px-2.5 py-1 rounded-full border border-cyan-800/50">
-            <Sparkles size={12} className="animate-spin text-cyan-300" style={{ animationDuration: '6s' }} />
+            <Sparkles size={12} className="text-cyan-300" />
             Click any node to inspect
           </span>
           <button
@@ -99,29 +99,23 @@ export function SystemArchitecture() {
                       height: `${node.coords.r * 2 * (798 / 970)}%`,
                       transform: 'translate(-50%, -50%)'
                     }}
-                    className={`absolute rounded-full pointer-events-auto transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary ${
+                    className={`absolute rounded-full pointer-events-auto transition-colors duration-150 cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary ${
                       isHovered
-                        ? 'border-2 border-primary bg-primary/25 shadow-[0_0_20px_rgba(45,212,191,0.85)] scale-105 z-30'
-                        : 'border border-primary/20 hover:border-primary/80 bg-transparent hover:bg-primary/15'
+                        ? 'border-2 border-primary/80 bg-primary/10 z-30'
+                        : 'border border-transparent hover:border-primary/50'
                     }`}
                     title={`Click to inspect ${node.name}`}
                     aria-label={`Inspect ${node.name}`}
                   >
-                    {/* Pulsing Target Dot on Hover */}
-                    {isHovered && (
-                      <span className="absolute inset-0 rounded-full animate-ping bg-primary/40 pointer-events-none" />
-                    )}
-
                     {/* Tooltip on Hover */}
                     {isHovered && (
                       <div 
-                        className={`absolute left-1/2 -translate-x-1/2 px-2.5 py-1 bg-slate-950/95 text-white text-[10px] font-mono rounded shadow-2xl border border-primary whitespace-nowrap pointer-events-none z-40 flex items-center gap-1.5 ${
-                          node.coords.cy > 75 ? '-top-8' : '-bottom-8'
+                        className={`absolute left-1/2 -translate-x-1/2 px-2 py-0.5 bg-slate-950/95 text-white text-[10px] font-mono rounded shadow-lg border border-primary/60 whitespace-nowrap pointer-events-none z-40 flex items-center gap-1.5 ${
+                          node.coords.cy > 75 ? '-top-7' : '-bottom-7'
                         }`}
                       >
                         <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                        <span className="font-bold">{node.name}</span>
-                        <span className="text-primary text-[9px]">(Click)</span>
+                        <span className="font-medium">{node.name}</span>
                       </div>
                     )}
                   </button>
@@ -131,6 +125,7 @@ export function SystemArchitecture() {
           </div>
         </div>
       </div>
+
 
       {/* --- QUICK COMPONENT PILLS BAR --- */}
       <div className="px-3 py-2 bg-[#08101A] border-t border-border/70 overflow-x-auto custom-scrollbar flex items-center gap-1.5 shrink-0">
